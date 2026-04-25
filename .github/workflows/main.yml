@@ -1,27 +1,29 @@
-name: Weekly Officer Report
+name: Officer Report Automation
 
 on:
   schedule:
     - cron: '50 3 * * 1'
-  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  run-report:
+  run-job:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
-      - name: Install packages
+      - name: Install Requirements
         run: pip install -r requirements.txt
 
-      - name: Run script
+      - name: Run Report
         env:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
