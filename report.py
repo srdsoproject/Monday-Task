@@ -18,6 +18,13 @@ from email import encoders
 
 
 # ---------------------------------------
+# TIMEZONE FIX (IST SAFE)
+# ---------------------------------------
+now = datetime.datetime.utcnow() + datetime.timedelta(hours=5, minutes=30)
+today = now.date()
+
+
+# ---------------------------------------
 # CONFIG
 # ---------------------------------------
 SPREADSHEET_ID = "1LdhvCL0-mEg66QI_83B_rXXWMXTMDrglGubR2gsEhF0"
@@ -37,11 +44,10 @@ Regards,
 Automation System
 """
 
-# ---------------------------------------
-# DATE
-# ---------------------------------------
-today = datetime.date.today()
 
+# ---------------------------------------
+# SHEET NAME
+# ---------------------------------------
 month_name = today.strftime("%B")
 year_short = today.strftime("%y")
 
@@ -49,7 +55,7 @@ SHEET_NAME = f"{month_name} {year_short}"
 
 
 # ---------------------------------------
-# GOOGLE CREDS
+# GOOGLE CREDENTIALS
 # ---------------------------------------
 google_creds_json = os.getenv("GOOGLE_CREDS_JSON")
 
@@ -58,7 +64,7 @@ with open("credentials.json", "w") as f:
 
 
 # ---------------------------------------
-# REPORT FUNCTION
+# REPORT GENERATION
 # ---------------------------------------
 def generate_report():
 
@@ -128,9 +134,9 @@ def generate_report():
 
     report_df = report_df[cols]
 
-    # -----------------------
+    # ---------------------------------------
     # WORD FILE
-    # -----------------------
+    # ---------------------------------------
     doc = Document()
 
     section = doc.sections[0]
@@ -208,16 +214,16 @@ def send_email(file):
 
 
 # ---------------------------------------
-# MAIN
+# MAIN (FINAL FIXED VERSION)
 # ---------------------------------------
 if __name__ == "__main__":
 
-    # Monday = 0
+    # HARD IST MONDAY CHECK
     if today.weekday() != 0:
-        print("Today is not Monday. Exiting.")
+        print("Not Monday (IST). Exiting safely.")
         exit()
 
-    print("Monday confirmed. Running...")
+    print("Monday confirmed (IST). Running report...")
 
     file = generate_report()
 
