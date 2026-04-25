@@ -17,10 +17,11 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 
-# -------------------------------------------------
+# ---------------------------------------
 # CONFIG
-# -------------------------------------------------
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+# ---------------------------------------
+SPREADSHEET_ID = "1LdhvCL0-mEg66QI_83B_rXXWMXTMDrglGubR2gsEhF0"
+
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_TO = os.getenv("EMAIL_TO").split(",")
@@ -36,27 +37,29 @@ Regards,
 Automation System
 """
 
-# -------------------------------------------------
-# DATE / SHEET NAME
-# -------------------------------------------------
+# ---------------------------------------
+# DATE
+# ---------------------------------------
 today = datetime.date.today()
+
 month_name = today.strftime("%B")
 year_short = today.strftime("%y")
 
-# Example: April 26
 SHEET_NAME = f"{month_name} {year_short}"
 
-# -------------------------------------------------
-# GOOGLE CREDENTIALS
-# -------------------------------------------------
+
+# ---------------------------------------
+# GOOGLE CREDS
+# ---------------------------------------
 google_creds_json = os.getenv("GOOGLE_CREDS_JSON")
 
 with open("credentials.json", "w") as f:
     json.dump(json.loads(google_creds_json), f)
 
-# -------------------------------------------------
-# REPORT GENERATION
-# -------------------------------------------------
+
+# ---------------------------------------
+# REPORT FUNCTION
+# ---------------------------------------
 def generate_report():
 
     month_start = today.replace(day=1)
@@ -113,7 +116,7 @@ def generate_report():
     report_df["Sr. No"] = report_df.index + 1
     report_df["Date"] = report_df["Date"].dt.strftime("%Y-%m-%d")
 
-    report_columns = [
+    cols = [
         "Sr. No",
         "Date",
         "Name",
@@ -123,78 +126,53 @@ def generate_report():
         "Remarks"
     ]
 
-    report_df = report_df[report_columns]
+    report_df = report_df[cols]
 
-    # -------------------------------------------------
-    # CREATE WORD REPORT
-    # -------------------------------------------------
+    # -----------------------
+    # WORD FILE
+    # -----------------------
     doc = Document()
 
     section = doc.sections[0]
     section.orientation = WD_ORIENT.LANDSCAPE
     section.page_width = Inches(11)
     section.page_height = Inches(8.5)
-    section.left_margin = Inches(0.5)
-    section.right_margin = Inches(0.5)
-    section.top_margin = Inches(0.5)
-    section.bottom_margin = Inches(0.5)
 
-    heading_text = (
-        f"Officer not done list "
-        f"(Period: {month_start:%Y-%m-%d} to {yesterday:%Y-%m-%d})"
+    heading = doc.add_heading(
+        f"Officer not done list ({month_start} to {yesterday})",
+        level=1
     )
 
-    heading = doc.add_heading(heading_text, level=1)
-
     run = heading.runs[0]
-    run.font.color.rgb = RGBColor(255, 0, 0)
     run.bold = True
     run.underline = True
     run.font.size = Pt(16)
+    run.font.color.rgb = RGBColor(255, 0, 0)
 
     heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    doc.add_paragraph()
-
-    table = doc.add_table(rows=1, cols=len(report_columns))
+    table = doc.add_table(rows=1, cols=len(cols))
     table.style = "Table Grid"
 
-    # Header
-    hdr_cells = table.rows[0].cells
+    for i, c in enumerate(cols):
+        table.rows[0].cells[i].text = c
 
-    for i, col_name in enumerate(report_columns):
-        hdr_cells[i].text = col_name
-
-        for para in hdr_cells[i].paragraphs:
-            for r in para.runs:
-                r.bold = True
-
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    # Rows
     for _, row in report_df.iterrows():
+        cells = table.add_row().cells
+        for i, c in enumerate(cols):
+            cells[i].text = str(row[c])
 
-        row_cells = table.add_row().cells
+    filename = f"not_done_report_{today}.docx"
 
-        for i, col_name in enumerate(report_columns):
-            row_cells[i].text = str(row[col_name])
+    doc.save(filename)
 
-            if i in (0, 1):
-                row_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    report_filename = f"not_done_report_{today}.docx"
-
-    doc.save(report_filename)
-
-    print("Report created:", report_filename)
-
-    return report_filename
+    return filename
 
 
-# -------------------------------------------------
-# EMAIL
-# -------------------------------------------------
-def send_email(filename):
+# ---------------------------------------
+# EMAIL FUNCTION
+# ---------------------------------------
+def send_email(file):
 
     msg = MIMEMultipart()
 
@@ -204,16 +182,15 @@ def send_email(filename):
 
     msg.attach(MIMEText(EMAIL_BODY, "plain"))
 
-    with open(filename, "rb") as attachment:
-
+    with open(file, "rb") as f:
         part = MIMEBase("application", "octet-stream")
-        part.set_payload(attachment.read())
+        part.set_payload(f.read())
 
     encoders.encode_base64(part)
 
     part.add_header(
         "Content-Disposition",
-        f"attachment; filename={filename}"
+        f"attachment; filename={file}"
     )
 
     msg.attach(part)
@@ -230,18 +207,17 @@ def send_email(filename):
     print("Email sent successfully.")
 
 
-# -------------------------------------------------
+# ---------------------------------------
 # MAIN
-# -------------------------------------------------
+# ---------------------------------------
 if __name__ == "__main__":
 
-    # Monday check
     # Monday = 0
     if today.weekday() != 0:
         print("Today is not Monday. Exiting.")
         exit()
 
-    print("Monday confirmed. Running report...")
+    print("Monday confirmed. Running...")
 
     file = generate_report()
 
