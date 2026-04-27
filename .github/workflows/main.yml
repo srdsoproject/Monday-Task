@@ -2,7 +2,8 @@ name: Officer Report Automation
 
 on:
   schedule:
-    - cron: '50 3 * * 1'
+    - cron: '50 3 * * 1'     # Every Monday at 03:50 UTC
+  workflow_dispatch:         # ← Add this (very important for testing)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -16,7 +17,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5   # v6 is very new; v5 is more stable
         with:
           python-version: '3.11'
 
