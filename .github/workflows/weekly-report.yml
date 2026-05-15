@@ -3,7 +3,6 @@ name: Officer Report Automation
 on:
   schedule:
     - cron: '30 3 * * 1'   # Every Monday at 9:00 AM IST
-    - cron: '0 4 * * 2'    # Tuesday 9:30 AM IST (backup)
   workflow_dispatch:       # Good for manual testing
 
 env:
